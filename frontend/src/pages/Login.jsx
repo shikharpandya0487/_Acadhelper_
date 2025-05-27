@@ -1,63 +1,192 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import toast, { Toaster } from "react-hot-toast";
+import {
+  Box,
+  Modal,
+  TextField,
+  Button,
+  Typography,
+  FormControl,
+  InputLabel,
+  CircularProgress,
+  IconButton,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import { useStore } from "../store";
+import toast, { Toaster } from "react-hot-toast";
+import CloseIcon from "@mui/icons-material/Close";
+import { institutes } from "./SampleData/Sample";
+import { auth } from "../firebase.js";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
-// MUI Components
-import { TextField, Button, Box, Typography, CircularProgress } from "@mui/material";
-
-const LoginForm = () => {
+const LoginModal = ({ open, handleClose, guestLogin }) => {
+  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [institute, setInstitute] = useState("");
   const [loading, setLoading] = useState(false);
-  const { user, setUser ,url} = useStore();
+
+  const { user, setUser, url } = useStore();
   const navigate = useNavigate();
 
-  // Redirect if already logged in
+  const validateEmail = (email) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validatePassword = (password) =>
+    /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password);
+  const validateUsername = (username) =>
+    /^[a-zA-Z0-9_]{3,15}$/.test(username);
+
+  // --- GUEST LOGIN EFFECT ---
   useEffect(() => {
-    if (user) {
-      navigate("/Dashboard");
+    if (open && guestLogin) {
+      setIsLogin(true); // Ensure it's login mode
+      setEmail("shikharpandya007@gmail.com");
+      setPassword("Shikhar@123");
+      setTimeout(() => {
+        document.getElementById("login-btn")?.click();
+      }, 300);
     }
-  }, [user, navigate]);
+  }, [open, guestLogin]);
 
-  // Validation function
-  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-  const handleLogin = async () => {
+  const handleAuth = async () => {
     setLoading(true);
+
     try {
-      if (!validateEmail(email)) return toast.error("Invalid email.");
-      if (!password) return toast.error("Enter your password.");
-
-      const response = await axios.post(`${url}/api/auth/login`, { email, password });
-
-      console.log(response);
-
-      if (response.status === 200) {
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-        const u=response.data.user;
-        u.token=response.data.token;
-        setUser(response.data.user);
-        navigate("/Dashboard");
-      } else {
-        toast.error("Login failed");
+      if (!validateEmail(email)) {
+        toast.error("Invalid email.");
+        return;
       }
-    } catch (error) {
-      toast.error(error.response?.data?.error || "An error occurred");
+      if (!validatePassword(password)) {
+        toast.error("Invalid password format.");
+        return;
+      }
+
+      if (!isLogin) {
+        // Signup specific validation
+        if (!validateUsername(username)) {
+          toast.error("Invalid username.");
+          return;
+        }
+        if (!institute) {
+          toast.error("Select an institute.");
+          return;
+        }
+
+        const res = await axios.post(`${url}/api/auth/signup`, {
+          email,
+          password,
+          username,
+          institute,
+        });
+
+        if (res.status === 201) {
+          const user = res.data.user;
+          user.token = res.data.token;
+          setUser(user);
+          toast.success("Check your email to verify your account.");
+          navigate('/Dashboard');
+          handleClose();
+        } else {
+          navigate('/');
+          toast.error("Signup failed.");
+        }
+      } else {
+        // Login logic
+        const res = await axios.post(`${url}/api/auth/login`, {
+          email,
+          password,
+        });
+        if (res.status === 200) {
+          const user = res.data.user;
+          user.token = res.data.token;
+          setUser(user);
+          toast.success("Login successful!");
+          navigate('/Dashboard');
+          handleClose();
+        } else {
+          toast.error("Login failed.");
+          navigate('/');
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.error || "Authentication error.");
+      navigate('/');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
+  // ---- GOOGLE SIGN IN HANDLER ----
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user2 = result.user;
+      const res = await axios.post(`${url}/api/auth/google`, { email: user2.email });
+
+      if (res.status === 200) {
+        const user = res.data.user;
+        user.token = res.data.token;
+        setUser(user);
+        toast.success("Google login successful!");
+        navigate('/Dashboard');
+        handleClose();
+      } else {
+        toast.error("Google login failed.");
+      }
+    } catch (err) {
+      // If backend returns 403, user must sign up first
+      if (err.response && err.response.status === 403) {
+        toast.error("No account found for this Google email. Please sign up using the website form first.");
+      } else {
+        toast.error("Google authentication error.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const checkVerification = async () => {
+      if (!user) return;
+      // Your verification logic (if any)
+    };
+    checkVerification();
+  }, [user, navigate]);
+
+  const toggleMode = () => setIsLogin(!isLogin);
+
   return (
-    <Box className="bg-gray-200 flex justify-center items-center h-screen w-screen">
-      <Box sx={{ width: 400, bgcolor: "white", p: 4, borderRadius: 2, boxShadow: 3 }}>
-        <Typography variant="h5" fontWeight="bold" textAlign="center" mb={2}>Log In</Typography>
+    <Modal open={open} onClose={handleClose}>
+      <Box
+        sx={{
+          width: 400,
+          bgcolor: "white",
+          p: 4,
+          borderRadius: 2,
+          boxShadow: 24,
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          outline: "none",
+        }}
+      >
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="h6" fontWeight="bold">
+            {isLogin ? "Login" : "Sign Up"}
+          </Typography>
+          <IconButton onClick={handleClose}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
 
         <TextField
           fullWidth
-          label="Email Address"
-          variant="outlined"
+          label="Email"
           margin="normal"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -65,34 +194,104 @@ const LoginForm = () => {
           helperText={email && !validateEmail(email) ? "Enter a valid email" : ""}
         />
 
+        {!isLogin && (
+          <>
+            <TextField
+              fullWidth
+              label="Username"
+              margin="normal"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              error={username && !validateUsername(username)}
+              helperText={
+                username && !validateUsername(username)
+                  ? "3-15 chars, letters, numbers, or _"
+                  : ""
+              }
+            />
+            <FormControl fullWidth margin="normal">
+              <InputLabel shrink htmlFor="institute-native-select">
+                Institute
+              </InputLabel>
+              <select
+                id="institute-native-select"
+                value={institute}
+                onChange={(e) => setInstitute(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  fontSize: '16px',
+                  borderRadius: '4px',
+                  border: '1px solid #ccc',
+                  marginTop: '8px'
+                }}
+              >
+                <option value="" disabled>
+                  Select an institute
+                </option>
+                {institutes.map((uni, i) => (
+                  <option key={i} value={uni}>
+                    {uni}
+                  </option>
+                ))}
+              </select>
+            </FormControl>
+          </>
+        )}
+
         <TextField
           fullWidth
           label="Password"
           type="password"
-          variant="outlined"
           margin="normal"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          error={password && !validatePassword(password)}
+          helperText={
+            password && !validatePassword(password)
+              ? "Min 8 chars, 1 letter, 1 number, 1 special"
+              : ""
+          }
         />
 
         <Button
           fullWidth
           variant="contained"
-          color="primary"
-          onClick={handleLogin}
           sx={{ mt: 2, height: 45 }}
+          onClick={handleAuth}
           disabled={loading}
+          id="login-btn"
         >
-          {loading ? <CircularProgress size={24} /> : "Login"}
+          {loading ? <CircularProgress size={24} /> : isLogin ? "Login" : "Sign Up"}
         </Button>
 
+        {isLogin ? (
+            <Button
+            fullWidth
+            variant="outlined"
+            sx={{ mt: 2, height: 45 }}
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} /> : "Sign in with Google"}
+          </Button>
+        ) : null}
+
+
         <Typography textAlign="center" mt={2}>
-          Don't have an account? <Link to="/Signup" style={{ color: "#1976d2" }}>Sign up</Link>
+          {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+          <span
+            onClick={toggleMode}
+            style={{ color: "#1976d2", cursor: "pointer" }}
+          >
+            {isLogin ? "Sign Up" : "Login"}
+          </span>
         </Typography>
+
+        <Toaster position="top-right" />
       </Box>
-      <Toaster />
-    </Box>
+    </Modal>
   );
 };
 
-export default LoginForm;
+export default LoginModal;

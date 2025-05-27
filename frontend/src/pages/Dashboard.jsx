@@ -43,7 +43,7 @@ const Dashboard = () => {
   const [editInput, setEditInput] = useState({ title: "", color: "", course: "", dueDate: "" })
   const [tasks, setTasks] = useState([]);
   const [open, setOpen] = React.useState(false);
-  const [age, setAge] = React.useState('');
+  // const [age, setAge] = React.useState('');
   const [progress, setProgress] = useState(0)
   const [selected, setSelected] = useState(null)
   const [dueTodayCount, setDueTodayCount] = useState(0);
@@ -52,11 +52,12 @@ const Dashboard = () => {
  
   const handleOpen = (task) => {
     setSelected(task)
+    // console.log(task)
     setEditInput({
-      title:title,
-      color:color,
-      course,
-      dueDate:dueDate,
+      title:task.title,
+      color:task.color,
+      course:task.course,
+      dueDate:task.dueDate,
     });
     setOpen(true);
   }
@@ -90,8 +91,7 @@ const Dashboard = () => {
 
   // console.log(user.token);
 
-  useEffect(() => {
-    const fetchTasks = async () => {
+      const fetchTasks = async () => {
       try {
         
         const { data } = await axios.get(`${url}/api/task?userId=${user._id}`,config);
@@ -113,6 +113,8 @@ const Dashboard = () => {
       }
     }
 
+  useEffect(() => {
+
     const fetchCourses = async () => {
       try {
         const { data } = await axios.get(`${url}/api/course?userId=${user?._id}`,config)
@@ -126,7 +128,6 @@ const Dashboard = () => {
         toast.error("Error fetching courses:", error.response.data.message);
       }
     }
-
 
     // console.log(user,url)
     const fectchpendingassignments = async () => {
@@ -173,6 +174,7 @@ const Dashboard = () => {
 
         // Reset task input
         setTaskInput({ title: "", color: "", course: "", dueDate: "", completed: false });
+        fetchTasks();
 
       } else {
         toast.error(data.error || "Task addition failed")
@@ -192,7 +194,9 @@ const Dashboard = () => {
           task?._id === taskId ? { ...task, completed: !task?.completed } :null
         );
 
-        setTasks(updatedTasks);
+        fetchTasks();
+
+        // setTasks(updatedTasks);
 
         // Recalculate progress based on the updated tasks
         const completedTasksCount = updatedTasks.filter(task => task?.completed).length;
@@ -206,9 +210,9 @@ const Dashboard = () => {
   };
 
 
-  const handleEditTask = async (id) => {
+  const handleEditTask = async (id,task) => {
     try {
-      const { data } = await axios.put(`${url}/api/task`, { taskId: id, task: editInput, type: "edit" },config)
+      const { data } = await axios.put(`${url}/api/task`, { taskId: id, task: editInput, type: "edit",completed:task.completed },config)
 
       if (data.success) {
         setEditInput({ title: "", color: "", course: "", dueDate: "" });
@@ -216,6 +220,8 @@ const Dashboard = () => {
         const updatedTasks = tasks.map((task) => task?._id == data.task?._id ? data.task:null )
        
         setTasks(updatedTasks)
+
+        fetchTasks();
        
         handleClose()
       } 
@@ -237,6 +243,7 @@ const Dashboard = () => {
         // Recalculate progress after deleting a task
         const completedTasksCount = taskArray.filter((task) => task?.completed).length;
         setProgress(Math.round((completedTasksCount / taskArray.length) * 100));
+        fetchTasks();
         handleClose()
 
       } 
@@ -246,7 +253,7 @@ const Dashboard = () => {
   };
     
   return (
-    <>
+    <div>
       <Layout>
         <div className='flex gap-2 justify-space-between items-center w-full max-h-screen h-screen bg-gradient-to-r from-blue-200 to-cyan-200'>
           <div className='tasks w-1/2 h-[90%] mx-4'>
@@ -432,7 +439,7 @@ const Dashboard = () => {
                   <Button variant="outlined" startIcon={<DeleteIcon />} color="error" onClick={() => handleDeleteTask(selected?._id)}>
                     Delete
                   </Button>
-                  <Button variant="outlined" startIcon={<EditIcon />} onClick={() => handleEditTask(selected?._id)}>
+                  <Button variant="outlined" startIcon={<EditIcon />} onClick={() => handleEditTask(selected?._id,selected)}>
                     Edit
                   </Button>
                 </div>
@@ -492,7 +499,7 @@ const Dashboard = () => {
           <Toaster />
         </div>
       </Layout>
-    </>
+    </div>
   )
 }
 

@@ -1,6 +1,5 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-
 import dotenv from 'dotenv'
 import sendEmail from "../../utils/mailhandler.js";
 import User from "../../models/user/userModel.js";
@@ -97,7 +96,7 @@ export const signupController=async (req, res) => {
         });
 
         const savedUser = await newUser.save();
-
+ 
         // Generate verification token
         const token = generateVerificationToken(savedUser._id);
 
@@ -109,9 +108,35 @@ export const signupController=async (req, res) => {
             message: "User created successfully",
             success: true,
             user: savedUser,
+            token
         });
 
     } catch (error) {
         return res.status(500).json({ error: error.message });
+    }
+}
+
+
+export const googleOauth = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email: email });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        const tokenData = {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+        };
+
+        const token = jwt.sign(tokenData, process.env.TOKEN_SECRET, { expiresIn: "1d" });
+        user.token = token;
+
+        res.status(200).json({ success: true, user, token }); // <-- token sent explicitly
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Failed to fetch user.", error: error.message });
     }
 }

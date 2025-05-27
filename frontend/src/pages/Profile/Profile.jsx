@@ -38,7 +38,7 @@ function Profile() {
   const [tasksRequired, setTasksRequired] = useState([]);
   const [challenges, setChallenges] = useState([])
   const [submissions, setSubmissions] = useState([])
-  const [totalChallenges, setTotalChallenges] = useState([])
+  // const [totalChallenges, setTotalChallenges] = useState([])
   const [points, setPoints] = useState(0)
   const [currentBadgeIndex2, setCurrentBadgeIndex2] = useState(0);
   const [currentBadgeIndex, setCurrentBadgeIndex] = useState(0);
@@ -93,8 +93,9 @@ function Profile() {
     }
   
     const fetchUserDetails = async () => {
+ 
       try {
-        const response = await axios.get(`${url}/api/user?Id=${id}`,config);
+        const response = await axios.get(`${url}/api/user?userId=${id}`,config);
         setFetchedUser(response.data.data);
   
         if (fetchedUser) {
@@ -136,7 +137,7 @@ function Profile() {
           ...config
         });
   
-        console.log(response.data.submissions);
+        // console.log(response.data.submissions);
         setSubmissions(response.data.submissions);
   
       } catch (error) {
@@ -156,7 +157,7 @@ function Profile() {
     calPointsOfChallenges();
     fetchSubmissions();
     setLoading(true)
-  }, [id]);
+  }, [id,fetchedUser]);
 
   const handleNext = () => {
     setCurrentBadgeIndex(
@@ -207,7 +208,7 @@ function Profile() {
   
               <TextField
                 label="Username"
-                value={(fetchedUser) ? fetchedUser.username : "username"}
+                value={(fetchedUser) ? username : "username"}
                 fullWidth
                 margin="normal"
                 InputProps={{
@@ -219,7 +220,7 @@ function Profile() {
   
               <TextField
                 label="Email"
-                value={(fetchedUser) ? fetchedUser.email : "email"}
+                value={(fetchedUser) ? email : "email"}
                 fullWidth
                 margin="normal"
                 InputProps={{

@@ -8,6 +8,7 @@ router.get("/find_user",authMiddleware,getUserByUsername)
 router.get('/getAllUsers',authMiddleware,getAllUsers)
 router.get('/get-events',authMiddleware,getAllEventsOfUser)
 router.get('/',authMiddleware,getUserById)
+
 router.patch('/',authMiddleware,updateUsername)
 
 export default router 

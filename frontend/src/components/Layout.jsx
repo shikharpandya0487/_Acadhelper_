@@ -31,6 +31,7 @@ export default function Layout({ children }) {
   }
 
   const handleNavigation = (text) => {
+    console.log(text);
     router(`/${text}`);
   };
 

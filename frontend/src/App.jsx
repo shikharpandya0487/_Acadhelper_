@@ -1,6 +1,4 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import LoginForm from './pages/Login';
-import SignupForm from './pages/Signup';
 import Groups from './pages/Groups';
 import Notification from './pages/Notification';
 import Profile from './pages/Profile/Profile.jsx'
@@ -20,13 +18,10 @@ import ChallengeDetails2 from './pages/Challenge/ChallengeDetails2.jsx';
 import AdminPageCourse from './pages/user/Courses/AdminPageCourse.jsx';
 import GroupPage from './pages/Group/GroupPage.jsx';
 import DailyChallenges from './pages/Challenge/DailyChallenges.jsx'
-
-
+import Home from "./pages/Home.jsx";
 
 
 function App() {
-
-  
 
   return (
     <BrowserRouter>
@@ -40,8 +35,7 @@ function App() {
           <Route path="/Focus" element={<Focus/>}/>
           <Route path="/Profile/:id" element={<Profile/>}/>
           <Route path="/user/Courses/:id" element={<AdminPageCourse/>}/>
-          <Route path="/" element={<LoginForm/>}/>
-          <Route path="/SignUp" element={<SignupForm/>}/>
+          <Route path="/" element={<Home/>}/>
           <Route path="/:groupId/GroupPage" element={<GroupPage/>}/>
           <Route path="/admin/Courses/:id" element={<AdminPage/>}/>
           <Route path="/admin/uploadchallenge/:id" element={<UploadChallenge/>}/>

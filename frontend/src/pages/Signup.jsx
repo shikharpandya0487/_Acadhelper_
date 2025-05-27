@@ -1,46 +1,66 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import { useStore } from '../store';
-import { Link } from 'react-router-dom';
-import toast, { Toaster } from 'react-hot-toast';
-import { institutes } from './SampleData/Sample.js';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import {
+  Box,
+  Modal,
+  TextField,
+  Button,
+  Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  CircularProgress,
+  IconButton,
+} from "@mui/material";
+import { Link, useNavigate } from "react-router-dom";
+import { useStore } from "../store";
+import toast, { Toaster } from "react-hot-toast";
+import CloseIcon from "@mui/icons-material/Close";
+// import { institutes } from "./SampleData/Sample.js";
 
-// MUI Components
-import { TextField, Button, MenuItem, InputLabel, Select, FormControl, CircularProgress, Box, Typography } from '@mui/material';
-
-const SignupForm = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
-  const [institute, setInstitute] = useState('');
+const SignupModal = ({ open, handleClose }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [institute, setInstitute] = useState("");
   const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
   const { user, setUser, url } = useStore();
 
-  // Validation functions
-  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const validatePassword = (password) => /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password);
-  const validateUsername = (username) => /^[a-zA-Z0-9_]{3,15}$/.test(username);
-  console.log(url);
+  const validateEmail = (email) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validatePassword = (password) =>
+    /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password);
+  const validateUsername = (username) =>
+    /^[a-zA-Z0-9_]{3,15}$/.test(username);
+
   const handleSignup = async () => {
     setLoading(true);
     try {
       if (!validateEmail(email)) return toast.error("Invalid email.");
       if (!validateUsername(username)) return toast.error("Invalid username.");
-      if (!validatePassword(password)) return toast.error("Password must be 8+ chars, contain letters, numbers & special chars.");
+      if (!validatePassword(password))
+        return toast.error("Password must be 8+ chars, contain letters, numbers & special chars.");
       if (!institute) return toast.error("Select an institute.");
-     
-      const response = await axios.post(`${url}/api/auth/signup`, { email, password, username, institute });
-      console.log("Signup",response,url)
+
+      const response = await axios.post(`${url}/api/auth/signup`, {
+        email,
+        password,
+        username,
+        institute,
+      });
+
       if (response.status === 200) {
         setUser(response.data.savedUser);
         toast.success("Check your email to verify your account.");
+        handleClose();
       } else {
         toast.error("Signup failed.");
       }
     } catch (error) {
-      console.log(error)
+      console.error(error);
       toast.error(error.response?.data?.error || "Signup error.");
     }
     setLoading(false);
@@ -50,8 +70,8 @@ const SignupForm = () => {
     const fetchUser = async () => {
       if (!user) return;
       try {
-        const response = await axios.get(`${url}/api/user?Id=${user._id}`);
-        if (response.data.data.isEmailVerified) navigate('/Dashboard');
+        const res = await axios.get(`${url}/api/user?Id=${user._id}`);
+        if (res.data.data.isEmailVerified) navigate("/Dashboard");
       } catch (e) {
         console.log(e);
       }
@@ -60,14 +80,33 @@ const SignupForm = () => {
   }, [user, navigate]);
 
   return (
-    <Box className="bg-gray-200 flex justify-center items-center h-screen w-screen">
-      <Box sx={{ width: 400, bgcolor: 'white', p: 4, borderRadius: 2, boxShadow: 3 }}>
-        <Typography variant="h5" fontWeight="bold" textAlign="center" mb={2}>Sign Up</Typography>
+    <Modal open={open} onClose={handleClose}>
+      <Box
+        sx={{
+          width: 400,
+          bgcolor: "white",
+          p: 4,
+          borderRadius: 2,
+          boxShadow: 24,
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          outline: "none",
+        }}
+      >
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="h6" fontWeight="bold">
+            Sign Up
+          </Typography>
+          <IconButton onClick={handleClose}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
 
         <TextField
           fullWidth
           label="Email"
-          variant="outlined"
           margin="normal"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -78,53 +117,68 @@ const SignupForm = () => {
         <TextField
           fullWidth
           label="Username"
-          variant="outlined"
           margin="normal"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           error={username && !validateUsername(username)}
-          helperText={username && !validateUsername(username) ? "3-15 characters, letters, numbers, or _" : ""}
+          helperText={
+            username && !validateUsername(username)
+              ? "3-15 characters, letters, numbers, or _"
+              : ""
+          }
         />
-
+{/* 
         <FormControl fullWidth margin="normal">
           <InputLabel>Institute</InputLabel>
-          <Select value={institute} onChange={(e) => setInstitute(e.target.value)}>
-            {institutes.map((uni, index) => (
-              <MenuItem key={index} value={uni}>{uni}</MenuItem>
+          <Select
+            value={institute}
+            onChange={(e) => setInstitute(e.target.value)}
+            label="Institute"
+          >
+            {institutes.map((uni, i) => (
+              <MenuItem key={i} value={uni}>
+                {uni}
+              </MenuItem>
             ))}
           </Select>
-        </FormControl>
+        </FormControl> */}
 
         <TextField
           fullWidth
           label="Password"
           type="password"
-          variant="outlined"
           margin="normal"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           error={password && !validatePassword(password)}
-          helperText={password && !validatePassword(password) ? "Min 8 chars, 1 letter, 1 number, 1 special" : ""}
+          helperText={
+            password && !validatePassword(password)
+              ? "Min 8 chars, 1 letter, 1 number, 1 special"
+              : ""
+          }
         />
 
         <Button
           fullWidth
           variant="contained"
-          color="primary"
-          onClick={handleSignup}
           sx={{ mt: 2, height: 45 }}
+          onClick={handleSignup}
           disabled={loading}
         >
           {loading ? <CircularProgress size={24} /> : "Sign Up"}
         </Button>
 
         <Typography textAlign="center" mt={2}>
-          Already have an account? <Link to="/Login" style={{ color: '#1976d2' }}>Login</Link>
+          Already have an account?{" "}
+          <Link to="/Login" style={{ color: "#1976d2" }}>
+            Login
+          </Link>
         </Typography>
+
+        <Toaster position="top-right" />
       </Box>
-      <Toaster />
-    </Box>
+    </Modal>
   );
 };
 
-export default SignupForm;
+export default SignupModal;
