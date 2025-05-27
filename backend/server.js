@@ -17,7 +17,7 @@ import courseRoutes from './routes/course/courseRoutes.js'
 dotenv.config();
 const app = express();
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: 'https://acadhelper-alpha.vercel.app',
     credentials: true 
   }));
 app.use(express.json()); // Parse JSON requests
