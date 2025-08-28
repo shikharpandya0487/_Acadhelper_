@@ -32,7 +32,8 @@ AcadHelper is a comprehensive **academic assistance platform** built using MERN,
 
 ## Tech Stack
 
-- **Framework**: Next.js: Utilized for both the frontend and backend logic, leveraging API routes to handle server-side operations.
+- **Frontend**: The user interface is built with **React**,building component-based user interfaces
+- **Backend**: The server-side logic and API are built by **Node.js** and the **Express.js** framework
 - **Database**: MongoDB with Mongoose ODM
 - **Styling**: Tailwind CSS, Material-UI (MUI)
 - **Authentication**: JWT-based user authentication
